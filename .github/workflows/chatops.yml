@@ -1,0 +1,33 @@
+name: 🤖 ChatOps Patch Apply
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  apply-patch:
+    if: |
+      github.event.comment.user.type == 'User' &&
+      startsWith(github.event.comment.body, '```patch')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Apply patch from comment
+        run: |
+          echo "$PATCH" > patch.diff
+          git apply patch.diff
+        env:
+          PATCH: ${{ github.event.comment.body }}
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "chore: apply patch from issue comment"
+          git push origin main
